@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>𓂝𓅱𓀀 古埃及文翻譯導引</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Egyptian+Hieroglyphs&display=swap');
+        
+        .hieroglyph-text {
+            font-family: 'Noto Sans Egyptian Hieroglyphs', 'Segoe UI Historic', sans-serif;
+            direction: ltr;
+        }
+
+        .step-enter { animation: fadeInDown 0.4s ease-out forwards; }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-hidden { display: none; }
+
+        .rtl-mirror { transform: scaleX(-1); display: inline-block; }
+        
+        .cartouche-base {
+            border: 4px solid #d4af37;
+            background-color: #faf8f5;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.08);
+            position: relative;
+            display: inline-block;
+        }
+        .cartouche-h { border-radius: 40px; padding: 10px 35px; }
+        .cartouche-h.knot-right::after { content: ''; position: absolute; right: -12px; top: 10%; height: 80%; width: 8px; background-color: #d4af37; border-radius: 4px; }
+        .cartouche-h.knot-left::after { content: ''; position: absolute; left: -12px; top: 10%; height: 80%; width: 8px; background-color: #d4af37; border-radius: 4px; }
+        
+        .cartouche-v { border-radius: 40px; padding: 35px 20px; min-width: 100px; }
+        .cartouche-v.knot-bottom::after { content: ''; position: absolute; bottom: -12px; left: 15%; width: 70%; height: 8px; background-color: #d4af37; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-stone-50 min-h-screen font-sans text-stone-800 pb-20">
+
+    <header class="bg-stone-900 text-stone-50 p-4 shadow-md flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-3 max-w-5xl mx-auto w-full">
+            <h1 class="flex items-baseline">
+                <span class="hieroglyph-text text-3xl text-amber-400 leading-none">𓂝𓅱𓀀</span>
+                <span class="text-lg font-bold tracking-widest ml-3 text-stone-100">古埃及文翻譯導引</span>
+                <span class="text-xs font-normal text-stone-500 ml-3 hidden sm:inline-block">v5.1 認知與私名解析</span>
+            </h1>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto w-full p-6 mt-6 space-y-8 relative">
+
+        <div class="absolute left-10 top-10 bottom-10 w-0.5 bg-stone-200 z-0 hidden md:block"></div>
+
+        <!-- ==================== 步驟 1: 接收用戶輸入 ==================== -->
+        <section id="step1" class="relative z-10 flex gap-6 step-enter">
+            <div class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold shrink-0 shadow-md" id="iconStep1">1</div>
+            <div class="flex-1 bg-white rounded-2xl shadow-sm border border-stone-200 p-6">
+                <h2 class="text-lg font-bold text-stone-800 mb-2">輸入想轉換的詞彙、名字或數字</h2>
+                <p class="text-sm text-stone-500 mb-4">請輸入中文、英文單字或純數字。系統將從外部學術庫獲取資料，或利用 AI 進行音譯與語意推薦。</p>
+                
+                <div class="flex gap-2">
+                    <input type="text" id="userInput" class="flex-1 bg-stone-50 border border-stone-300 rounded-xl p-3 text-stone-700 focus:ring-2 focus:ring-amber-500 focus:outline-none" placeholder="例如: 國王、美好、愛麗絲、或者現代詞彙 '網路'..." onkeypress="if(event.key === 'Enter') startPipeline()">
+                    <button onclick="startPipeline()" class="px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-xl transition-colors flex items-center gap-2">
+                        啟動解析 <i data-lucide="brain-circuit" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                
+                <div class="mt-4 flex gap-2 text-xs flex-wrap">
+                    <span class="text-stone-400">深度測試：</span>
+                    <button onclick="document.getElementById('userInput').value='美好'; startPipeline();" class="text-amber-600 hover:underline">美好 (體驗三態拆解)</button>
+                    <button onclick="document.getElementById('userInput').value='愛麗絲'; startPipeline();" class="text-emerald-600 hover:underline">愛麗絲 (體驗私名音譯)</button>
+                    <button onclick="document.getElementById('userInput').value='網路'; startPipeline();" class="text-amber-600 hover:underline">網路 (體驗語意意譯)</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 步驟 2: 檢索與認知語言學解析 ==================== -->
+        <section id="step2" class="relative z-10 flex gap-6 step-hidden">
+            <div class="w-8 h-8 rounded-full bg-stone-200 text-stone-600 flex items-center justify-center font-bold shrink-0" id="iconStep2">2</div>
+            <div class="flex-1 bg-white rounded-2xl shadow-sm border border-stone-200 p-6">
+                
+                <div id="processingStatus" class="flex items-center gap-3 text-stone-600 font-medium mb-4">
+                    <i data-lucide="loader-2" class="w-5 h-5 animate-spin text-amber-600"></i>
+                    <span id="statusText">正在連接開源資料庫...</span>
+                </div>
+
+                <!-- AI 語意救援與音譯區塊 (當查無資料時顯示) -->
+                <div id="aiSuggestArea" class="hidden bg-stone-50 border border-stone-200 rounded-xl p-4">
+                    <div class="flex items-center gap-2 text-amber-800 font-bold mb-2">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i> 找不到完全匹配，為您提供兩種方案：
+                    </div>
+                    <p class="text-sm text-stone-600 mb-6" id="aiExplanation"></p>
+                    
+                    <!-- 方案一：音譯 (Phonetic Transliteration) -->
+                    <div class="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <i data-lucide="mic" class="w-4 h-4"></i> 方案一：直接音譯 (適合人名、外國名詞)
+                    </div>
+                    <div id="aiPhoneticOption" class="mb-6">
+                        <!-- 動態填入音譯選項 -->
+                    </div>
+
+                    <!-- 方案二：意譯 (Semantic Suggestions) -->
+                    <div class="text-xs font-bold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <i data-lucide="book-open" class="w-4 h-4"></i> 方案二：文化意譯 (適合抽象概念、現代事物)
+                    </div>
+                    <div class="space-y-3" id="aiSuggestionsList">
+                        <!-- 動態填入意譯選項 -->
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-stone-200 flex justify-end">
+                        <button onclick="cancelPipeline()" class="px-4 py-2 text-sm text-stone-500 hover:text-stone-700">放棄並重新搜尋</button>
+                    </div>
+                </div>
+
+                <!-- 認知語言學解剖展示區 (DB命中或用戶選擇AI建議後顯示) -->
+                <div id="cognitiveReviewArea" class="hidden">
+                    <div class="flex items-center gap-2 text-stone-800 font-bold mb-4">
+                        <i data-lucide="microscope" class="w-5 h-5 text-amber-600"></i> 認知語言學解析 (Cognitive Parsing)
+                    </div>
+                    
+                    <div class="bg-stone-50 rounded-xl p-4 border border-stone-200 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">羅馬轉寫</div>
+                                <div class="font-mono text-lg text-amber-700 font-bold" id="cogTransliteration">nfr.t</div>
+                            </div>
+                            <div>
+                                <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">語法與表達特徵</div>
+                                <div class="text-sm text-stone-700" id="cogGrammar">陰性單數 (字尾加上 t 𓏏)</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-stone-200">
+                            <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2">符號結構拆解</div>
+                            <div class="flex flex-wrap gap-2" id="cogComponents">
+                                <!-- 動態生成組件 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-sm font-bold text-stone-700 mb-3">請選擇您希望輸出的寫法配置：</div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="renderOptionsContainer">
+                        <!-- 動態生成三張卡片 -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ==================== 步驟 3: 最終排版引擎 ==================== -->
+        <section id="step3" class="relative z-10 flex gap-6 step-hidden">
+            <div class="w-8 h-8 rounded-full bg-stone-200 text-stone-600 flex items-center justify-center font-bold shrink-0" id="iconStep3">3</div>
+            
+            <div class="flex-1 flex flex-col gap-4">
+                <div class="bg-white rounded-2xl shadow-sm border border-stone-200 p-6">
+                    <h2 class="text-lg font-bold text-stone-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="layout-template" class="w-5 h-5 text-amber-600"></i> 排版預覽與輸出
+                    </h2>
+                    
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <!-- 控制面板 (移除三態選擇，專注於幾何與物理排版) -->
+                        <div class="w-full md:w-1/3 space-y-4">
+                            <div>
+                                <label class="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2 block">佈局組態</label>
+                                <select id="layoutStyle" onchange="toggleColInput(); updateLayoutPreview();" class="w-full bg-stone-50 border border-stone-200 text-stone-700 text-sm rounded-lg focus:ring-amber-500 block p-2.5">
+                                    <option value="horizontal">水平排列 (智慧疊合扁字元)</option>
+                                    <option value="horizontal_cartouche">水平王名框 (Cartouche)</option>
+                                    <option value="vertical">垂直多行排列</option>
+                                    <option value="vertical_cartouche">垂直王名框</option>
+                                </select>
+                            </div>
+
+                            <div id="colCountContainer" class="hidden transition-all duration-300">
+                                <label class="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2 flex justify-between">
+                                    <span>每列水平區塊數 (n)</span>
+                                    <span id="colCountVal" class="text-amber-600 font-bold">3</span>
+                                </label>
+                                <input type="range" id="verticalRows" min="1" max="3" value="3" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-amber-600" oninput="document.getElementById('colCountVal').innerText=this.value; updateLayoutPreview();">
+                                <p class="text-[10px] text-stone-400 mt-1">數字區段將強制按位數網格換行</p>
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2 block">閱讀方向</label>
+                                <select id="readingDirection" onchange="updateLayoutPreview()" class="w-full bg-stone-50 border border-stone-200 text-stone-700 text-sm rounded-lg focus:ring-amber-500 block p-2.5">
+                                    <option value="ltr">左至右 (鳥面朝左)</option>
+                                    <option value="rtl">右至左 (鳥面朝右，經典鏡射)</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="relative inline-flex items-center cursor-pointer mt-2">
+                                  <input type="checkbox" id="addGodSymbol" onchange="updateLayoutPreview()" class="sr-only peer">
+                                  <div class="w-11 h-6 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                  <span class="ml-3 text-sm font-medium text-stone-600">尊崇神明後綴 (𓊹)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 視覺預覽區 -->
+                        <div id="previewContainer" class="w-full md:w-2/3 bg-stone-100 rounded-xl border border-stone-200 flex items-center justify-center min-h-[250px] p-4 overflow-hidden relative">
+                            <div id="captureArea" class="p-4 flex justify-center items-center transition-transform duration-300 origin-center">
+                                <div id="visualPreview" class="hieroglyph-text text-5xl text-stone-800"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-between items-center border-t border-stone-100 pt-4">
+                        <button onclick="copyFinalUnicode()" class="text-stone-500 hover:text-amber-600 transition-colors p-2 flex items-center gap-2 text-sm font-medium">
+                            <i data-lucide="copy" class="w-4 h-4"></i> 複製底層 Unicode
+                        </button>
+                        <button onclick="downloadAsImage()" class="bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 hover:bg-amber-700 transition-colors shadow-md">
+                            <i data-lucide="image-down" class="w-4 h-4"></i> 下載所見即所得圖片
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 記憶體形狀分析區塊 -->
+                <div class="bg-stone-200/50 rounded-xl border border-stone-200 p-4">
+                    <div class="text-xs font-bold text-stone-500 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                        <i data-lucide="cpu" class="w-4 h-4"></i> 記憶體內：幾何型態判定 (排版依據)
+                    </div>
+                    <div id="shapeAnalysisContainer" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <script>
+        lucide.createIcons();
+
+        const apiKey = ""; 
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        // ==========================================
+        // V5.0: 模擬外部資料庫 (僅提供基礎詞彙與轉寫)
+        // ==========================================
+        const simulatedExternalDB = {
+            "太陽": { transliteration: "ra", meaning: "太陽神 / 太陽" },
+            "貓": { transliteration: "miw", meaning: "貓" },
+            "生命": { transliteration: "ankh", meaning: "生命 / 活著" },
+            "國王": { transliteration: "nesu-bity", meaning: "上下埃及之王" },
+            "美好": { transliteration: "nfr", meaning: "美好 / 完美" },
+            "埃及": { transliteration: "kmt", meaning: "黑土地 (埃及)" }
+        };
+
+        const egyptianNumbers = { 1000000: '𓁨', 100000: '𓆐', 10000: '𓂭', 1000: '𓆼', 100: '𓍢', 10: '𓎆', 1: '𓏤' };
+        
+        let currentSelectedData = { unicode: "", transliteration: "" };
+        let cognitiveCache = {}; // 新增：暫存當前詞彙的認知解析結果，避免重複呼叫 AI
+
+        // ==========================================
+        // 管線控制器
+        // ==========================================
+        async function startPipeline() {
+            const keyword = document.getElementById('userInput').value.trim().toLowerCase();
+            if (!keyword) return showToast("請輸入詞彙", "error");
+
+            cognitiveCache = {}; // 新增：每次全新搜尋時，清空暫存
+
+            document.getElementById('step2').classList.remove('step-hidden');
+            document.getElementById('step2').classList.add('step-enter');
+            document.getElementById('step3').classList.add('step-hidden');
+            
+            const statusEl = document.getElementById('processingStatus');
+            const statusText = document.getElementById('statusText');
+            const aiSuggestArea = document.getElementById('aiSuggestArea');
+            const cognitiveReviewArea = document.getElementById('cognitiveReviewArea');
+            
+            statusEl.classList.remove('hidden');
+            aiSuggestArea.classList.add('hidden');
+            cognitiveReviewArea.classList.add('hidden');
+            
+            statusText.innerText = "正在連接開源資料庫檢索中...";
+            lucide.createIcons();
+
+            // 1. 純數字攔截器
+            if (/^\d+$/.test(keyword)) {
+                let num = parseInt(keyword, 10);
+                let resultText = num === 0 ? '𓄤' : '';
+                if (num > 0) {
+                    const values = [1000000, 100000, 10000, 1000, 100, 10, 1];
+                    for (let v of values) {
+                        const count = Math.floor(num / v);
+                        if (count > 0) { resultText += egyptianNumbers[v].repeat(count); num %= v; }
+                    }
+                }
+                currentSelectedData = { unicode: resultText, transliteration: keyword };
+                statusEl.classList.add('hidden');
+                showToast("偵測到純數字，已繞過語法解析！");
+                proceedToLayout();
+                return;
+            }
+
+            // 2. 本地/外部資料庫查詢
+            await new Promise(r => setTimeout(r, 600)); 
+            const dbResult = simulatedExternalDB[keyword];
+
+            if (dbResult) {
+                // DB 命中
+                statusText.innerText = "資料庫命中！啟動 AI 認知語法解剖中...";
+                await runCognitiveParsing(dbResult.transliteration, dbResult.meaning);
+            } else {
+                // DB 未命中，進入 AI 語意救援 (擴充：音譯與意譯雙軌)
+                statusText.innerText = "資料庫無匹配。啟動 AI 音譯與語意分析...";
+                try {
+                    const aiResult = await callGeminiSemanticFallback(keyword);
+                    statusEl.classList.add('hidden'); 
+                    aiSuggestArea.classList.remove('hidden');
+                    document.getElementById('aiExplanation').innerText = aiResult.explanation;
+                    
+                    // 渲染方案一：音譯 (Phonetic Option)
+                    const phoneticEl = document.getElementById('aiPhoneticOption');
+                    const safePhoneticTrans = aiResult.phonetic.transliteration.replace(/'/g, "\\'");
+                    phoneticEl.innerHTML = `
+                        <div class="bg-white rounded-xl p-3 border border-emerald-200 hover:border-emerald-400 cursor-pointer transition-colors shadow-sm flex justify-between items-center group" 
+                             onclick="handlePhoneticSelection('${aiResult.phonetic.unicode}', '${safePhoneticTrans}')">
+                            <div>
+                                <div class="text-sm font-bold text-emerald-700 mb-1">將「${keyword}」當作私名直接拼寫</div>
+                                <div class="flex items-center gap-3">
+                                    <span class="hieroglyph-text text-2xl text-stone-800">${aiResult.phonetic.unicode}</span>
+                                    <span class="font-mono text-xs text-stone-500">${aiResult.phonetic.transliteration}</span>
+                                </div>
+                            </div>
+                            <div class="text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <i data-lucide="arrow-right-circle" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                    `;
+
+                    // 渲染方案二：意譯 (Semantic Suggestions)
+                    const listEl = document.getElementById('aiSuggestionsList');
+                    listEl.innerHTML = '';
+                    aiResult.semantic_suggestions.forEach(sug => {
+                        listEl.innerHTML += `
+                            <div class="bg-white rounded-xl p-3 border border-stone-200 hover:border-amber-400 cursor-pointer transition-colors shadow-sm flex justify-between items-center group" 
+                                 onclick="runCognitiveParsing('${sug.transliteration}', '${sug.reason}')">
+                                <div>
+                                    <div class="text-sm font-bold text-stone-700 mb-1">${sug.reason}</div>
+                                    <div class="font-mono text-xs text-stone-500">轉寫: ${sug.transliteration}</div>
+                                </div>
+                                <div class="text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+                                </div>
+                            </div>`;
+                    });
+                    lucide.createIcons();
+                } catch (e) {
+                    statusEl.innerHTML = `<span class="text-red-600">AI 語意分析失敗，請換個詞彙試試看。</span>`;
+                    console.error(e);
+                }
+            }
+        }
+
+        // ==========================================
+        // LLM 作為語言學認知中樞
+        // ==========================================
+        async function runCognitiveParsing(transliteration, meaning) {
+            const statusEl = document.getElementById('processingStatus');
+            const aiSuggestArea = document.getElementById('aiSuggestArea');
+            const cognitiveReviewArea = document.getElementById('cognitiveReviewArea');
+            
+            // 移除：aiSuggestArea.classList.add('hidden'); // 保留建議清單，讓用戶可反覆點選
+            
+            // 新增：如果已經解析過，直接從暫存讀取，瞬間渲染
+            if (cognitiveCache[transliteration]) {
+                renderCognitiveData(cognitiveCache[transliteration], transliteration);
+                return;
+            }
+
+            statusEl.classList.remove('hidden');
+            document.getElementById('statusText').innerText = `啟動大模型進行「${transliteration}」的認知語法解剖...`;
+            cognitiveReviewArea.classList.add('hidden'); // 獲取資料時先隱藏解剖區
+            
+            try {
+                const prompt = `
+                    你是一位古埃及語言學與認知解析專家。
+                    請解剖這個古埃及詞彙：
+                    - 轉寫: ${transliteration}
+                    - 意義: ${meaning}
+                    
+                    請根據古埃及語法與書寫習慣，嚴格回傳以下 JSON 結構：
+                    {
+                        "word_info": "簡述這個詞的語法與表達特徵 (例如：陰性單數、或這是一個尊崇換位寫法的固定詞)",
+                        "components": [
+                            {"part": "真實Unicode字元", "type": "類型(如:表意符號/拼音輔助/決定符/語法後綴)", "meaning": "該部件的意思或發音"}
+                        ],
+                        "render_options": {
+                            "combo": { "unicode": "真實Unicode", "desc": "組合寫法 (表意+拼音+決定符，歷史最常見)" },
+                            "ideogram_only": { "unicode": "真實Unicode", "desc": "純表意寫法 (極簡，僅保留核心表意與決定符)" },
+                            "phonetic_only": { "unicode": "真實Unicode", "desc": "純拼音寫法 (僅用基礎單音字母拼出發音)" }
+                        }
+                    }
+                    注意：所有的 unicode 欄位必須使用真實的古埃及聖書體字元 (U+13000區段)。若遇到固定綁定的祈使語或尊稱 (如國王 nesu-bity)，請在組合寫法中展現其特殊排列 (如樹枝與蜜蜂)。
+                `;
+
+                const response = await fetch(API_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
+                });
+                
+                const data = await response.json();
+                const parseResult = JSON.parse(data.candidates[0].content.parts[0].text);
+                
+                // 新增：存入暫存並呼叫渲染
+                cognitiveCache[transliteration] = parseResult;
+                renderCognitiveData(parseResult, transliteration);
+                
+            } catch (e) {
+                statusEl.innerHTML = `<span class="text-red-600">認知解析失敗，請稍後重試。</span>`;
+                console.error(e);
+            }
+        }
+
+        // 新增：將渲染邏輯獨立，方便快取直接呼叫
+        function renderCognitiveData(parseResult, transliteration) {
+            const statusEl = document.getElementById('processingStatus');
+            const cognitiveReviewArea = document.getElementById('cognitiveReviewArea');
+            
+            statusEl.classList.add('hidden');
+            cognitiveReviewArea.classList.remove('hidden');
+            
+            document.getElementById('cogTransliteration').innerText = transliteration;
+            document.getElementById('cogGrammar').innerText = parseResult.word_info;
+            
+            const compContainer = document.getElementById('cogComponents');
+            compContainer.innerHTML = '';
+            parseResult.components.forEach(comp => {
+                compContainer.innerHTML += `
+                    <div class="bg-white border border-stone-200 rounded px-2 py-1 flex items-center gap-2 shadow-sm">
+                        <span class="hieroglyph-text text-xl">${comp.part}</span>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-stone-500">${comp.type}</span>
+                            <span class="text-[10px] text-stone-400">${comp.meaning}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const optContainer = document.getElementById('renderOptionsContainer');
+            optContainer.innerHTML = '';
+            const opts = parseResult.render_options;
+            
+            const createCard = (key, title, optData, isRecommended) => {
+                const badge = isRecommended ? `<span class="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold ml-2">推薦</span>` : '';
+                const borderClass = isRecommended ? 'border-amber-400 bg-amber-50/50' : 'border-stone-200 bg-white hover:border-amber-300';
+                return `
+                    <div class="${borderClass} rounded-xl p-4 cursor-pointer transition-colors shadow-sm relative group" onclick="selectRenderOption('${optData.unicode}', '${transliteration}')">
+                        <div class="text-xs font-bold text-stone-700 mb-2 flex items-center">${title} ${badge}</div>
+                        <div class="hieroglyph-text text-4xl text-stone-800 mb-2">${optData.unicode}</div>
+                        <div class="text-[10px] text-stone-500 leading-tight">${optData.desc}</div>
+                        <div class="absolute inset-0 flex items-center justify-center bg-white/80 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                            <span class="bg-amber-600 text-white text-xs px-3 py-1.5 rounded-lg shadow-sm">選擇並排版</span>
+                        </div>
+                    </div>
+                `;
+            };
+            
+            optContainer.innerHTML += createCard('combo', '組合模式', opts.combo, true);
+            optContainer.innerHTML += createCard('ideogram_only', '純表意模式', opts.ideogram_only, false);
+            optContainer.innerHTML += createCard('phonetic_only', '純拼音模式', opts.phonetic_only, false);
+
+            showToast("語法解析完成！請選擇輸出模式。");
+            
+            // 自動往下捲動以便檢視解析結果
+            setTimeout(() => cognitiveReviewArea.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        }
+
+        // 新增：處理私名音譯選擇，隱藏認知解析區塊避免混淆
+        function handlePhoneticSelection(unicode, trans) {
+            document.getElementById('cognitiveReviewArea').classList.add('hidden');
+            selectRenderOption(unicode, trans);
+        }
+
+        // 語意救援 (LLM-Fallback 雙軌升級版)
+        async function callGeminiSemanticFallback(keyword) {
+            const prompt = `
+                使用者輸入了現代詞彙或人名：「${keyword}」。在古埃及字典中無直接對應。
+                請扮演古埃及專家，提供兩種解決方案：
+                1. 【音譯 (Phonetic)】：將該詞彙當作外國人名或現代事物，轉換為英文字母拼音 (僅限 a-z，若為中文請先轉為拼音再映射)，並給出對應的單音節基礎聖書體 Unicode 組合。
+                2. 【意譯 (Semantic)】：給出 1~2 個在古埃及文化中「語意最接近」的替換概念建議。
+                
+                請嚴格回傳 JSON 格式：
+                {
+                    "explanation": "委婉說明古埃及無此詞，為您提供直接音譯與文化意譯選項 (30字內)",
+                    "phonetic": {
+                        "transliteration": "英文字母拼音",
+                        "unicode": "真實的單音節聖書體 Unicode 組合"
+                    },
+                    "semantic_suggestions": [
+                        { "reason": "推薦理由", "transliteration": "羅馬轉寫(小寫)" }
+                    ]
+                }`;
+            const response = await fetch(API_URL, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
+            });
+            const data = await response.json();
+            return JSON.parse(data.candidates[0].content.parts[0].text);
+        }
+
+        function selectRenderOption(unicode, trans) {
+            currentSelectedData = { unicode: unicode, transliteration: trans };
+            proceedToLayout();
+        }
+
+        function cancelPipeline() {
+            document.getElementById('step2').classList.add('step-hidden');
+            document.getElementById('userInput').value = ''; document.getElementById('userInput').focus();
+        }
+
+        // ==========================================
+        // 排版引擎
+        // ==========================================
+        const numCharsSet = new Set(['𓏤', '𓎆', '𓍢', '𓆼', '𓂭', '𓆐', '𓁨']);
+
+        function parseUnicodeSegments(unicodeStr) {
+            let segments = [];
+            let chars = [...unicodeStr].filter(c => c.trim() !== '');
+            let i = 0;
+            while (i < chars.length) {
+                if (numCharsSet.has(chars[i])) {
+                    let c = chars[i];
+                    let count = 0;
+                    while (i < chars.length && chars[i] === c) { count++; i++; }
+                    segments.push({ type: 'number', char: c, count: count });
+                } else {
+                    let content = '';
+                    while (i < chars.length && !numCharsSet.has(chars[i])) { content += chars[i]; i++; }
+                    segments.push({ type: 'text', content: content });
+                }
+            }
+            return segments;
+        }
+
+        function getGlyphShapes(text) {
+            const chars = [...text];
+            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+            ctx.font = "100px 'Noto Sans Egyptian Hieroglyphs', sans-serif";
+            return chars.map(char => {
+                const metrics = ctx.measureText(char);
+                const w = (metrics.actualBoundingBoxLeft||0) + (metrics.actualBoundingBoxRight||metrics.width);
+                const h = (metrics.actualBoundingBoxAscent||40) + (metrics.actualBoundingBoxDescent||10);
+                if (w === 0 || h === 0) return { char, type: 'square', w, h, ratio: 1 };
+                const ratio = w / h; let type = 'square';
+                if (ratio >= 2) type = 'broad'; else if (ratio <= 0.85) type = 'tall'; 
+                if (w < 65 && h < 65) type = 'small'; 
+                return { char, type, w, h, ratio };
+            });
+        }
+
+        function buildHorizontalBlocks(glyphs) {
+            let blocks = []; let i = 0;
+            while(i < glyphs.length) {
+                const g = glyphs[i];
+                if (g.type === 'broad' || g.type === 'small') {
+                    let stack = [g];
+                    while (i + 1 < glyphs.length && stack.length < 2 && (glyphs[i+1].type === 'broad' || glyphs[i+1].type === 'small')) {
+                        stack.push(glyphs[i+1]); i++; 
+                    }
+                    blocks.push(stack.length > 1 ? { type: 'stack', items: stack } : { type: 'single', items: stack });
+                } else {
+                    blocks.push({ type: 'single', items: [g] });
+                }
+                i++;
+            }
+            return blocks;
+        }
+
+        function getNumberGrid(char, count) {
+            if (count === 1) return [[char]]; if (count === 2) return [[char, char]]; if (count === 3) return [[char, char, char]];
+            if (count === 4) return [[char, char, char, char]]; if (count === 5) return [[char, char, char], [char, char]];
+            if (count === 6) return [[char, char, char], [char, char, char]]; if (count === 7) return [[char, char, char, char], [char, char, char]];
+            if (count === 8) return [[char, char, char, char], [char, char, char, char]]; if (count === 9) return [[char, char, char], [char, char, char], [char, char, char]];
+            let rows = []; while (count > 0) { let take = Math.min(count, 4); rows.push(Array(take).fill(char)); count -= take; }
+            return rows;
+        }
+
+        function proceedToLayout() {
+            document.getElementById('step3').classList.remove('step-hidden');
+            document.getElementById('step3').classList.add('step-enter');
+            setTimeout(() => document.getElementById('step3').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+            updateLayoutPreview();
+        }
+
+        function toggleColInput() {
+            const layout = document.getElementById('layoutStyle').value;
+            document.getElementById('colCountContainer').classList.toggle('hidden', !layout.includes('vertical'));
+        }
+
+        function updateLayoutPreview() {
+            if (!currentSelectedData.unicode) return;
+
+            const layoutStyle = document.getElementById('layoutStyle').value;
+            const direction = document.getElementById('readingDirection').value;
+            const addGodSymbol = document.getElementById('addGodSymbol').checked;
+            
+            let targetString = currentSelectedData.unicode + (addGodSymbol ? " 𓊹" : "");
+            const segments = parseUnicodeSegments(targetString);
+
+            const isRTL = direction === 'rtl';
+            const mirrorClass = isRTL ? 'rtl-mirror' : '';
+            const flexRowDir = isRTL ? 'flex-row-reverse' : 'flex-row';
+            let blocksHTML = '';
+
+            const renderBlock = (b) => {
+                if (b.type === 'stack') {
+                    let html = `<div class="flex flex-col items-center justify-center" style="line-height: 0.8;">`;
+                    b.items.forEach(g => html += `<span class="${mirrorClass} block">${g.char}</span>`);
+                    return html + `</div>`;
+                } else return `<span class="${mirrorClass} block leading-none">${b.items[0].char}</span>`;
+            };
+
+            if (layoutStyle.includes('horizontal')) {
+                blocksHTML = `<div class="flex ${flexRowDir} items-center justify-center gap-3">`;
+                segments.forEach(seg => {
+                    if (seg.type === 'number') {
+                        const grid = getNumberGrid(seg.char, seg.count);
+                        blocksHTML += `<div class="flex flex-col items-center justify-center gap-1">`;
+                        grid.forEach(row => {
+                            blocksHTML += `<div class="flex ${flexRowDir} items-center justify-center gap-1">`;
+                            row.forEach(c => blocksHTML += `<span class="${mirrorClass} block leading-none">${c}</span>`);
+                            blocksHTML += `</div>`;
+                        });
+                        blocksHTML += `</div>`;
+                    } else {
+                        buildHorizontalBlocks(getGlyphShapes(seg.content)).forEach(b => blocksHTML += renderBlock(b));
+                    }
+                });
+                blocksHTML += `</div>`;
+            } else {
+                const n = parseInt(document.getElementById('verticalRows').value) || 3;
+                blocksHTML = `<div class="flex flex-col gap-4 w-max mx-auto">`;
+                segments.forEach(seg => {
+                    if (seg.type === 'number') {
+                        getNumberGrid(seg.char, seg.count).forEach(row => {
+                            const justifyClass = row.length === 1 ? "justify-center" : "justify-between";
+                            blocksHTML += `<div class="flex ${flexRowDir} ${justifyClass} items-center gap-2 w-full">`;
+                            row.forEach(c => blocksHTML += `<span class="${mirrorClass} block leading-none">${c}</span>`);
+                            blocksHTML += `</div>`;
+                        });
+                    } else {
+                        const blocks = buildHorizontalBlocks(getGlyphShapes(seg.content)); 
+                        for (let i = 0; i < blocks.length; i += n) {
+                            const row = blocks.slice(i, i + n);
+                            let justifyClass = row.length === 1 ? "justify-center" : "justify-between";
+                            blocksHTML += `<div class="flex ${flexRowDir} ${justifyClass} items-center gap-6 w-full">`;
+                            row.forEach(b => blocksHTML += renderBlock(b));
+                            blocksHTML += `</div>`;
+                        }
+                    }
+                });
+                blocksHTML += `</div>`;
+            }
+
+            const previewEl = document.getElementById('visualPreview');
+            if (layoutStyle === 'horizontal_cartouche') {
+                previewEl.innerHTML = `<div class="cartouche-base cartouche-h ${isRTL ? 'knot-left' : 'knot-right'}">${blocksHTML}</div>`;
+            } else if (layoutStyle === 'vertical_cartouche') {
+                previewEl.innerHTML = `<div class="cartouche-base cartouche-v knot-bottom">${blocksHTML}</div>`;
+            } else {
+                previewEl.innerHTML = blocksHTML;
+            }
+
+            displayShapeAnalysis(getGlyphShapes(targetString));
+            autoScalePreview();
+            showToast("排版渲染完成！", "info");
+        }
+
+        function autoScalePreview() {
+            const container = document.getElementById('previewContainer');
+            const captureArea = document.getElementById('captureArea');
+            captureArea.style.transform = 'scale(1)';
+            setTimeout(() => {
+                const scale = Math.min((container.clientWidth - 40) / captureArea.scrollWidth, (container.clientHeight - 40) / captureArea.scrollHeight, 1);
+                if (scale < 1) captureArea.style.transform = `scale(${scale})`;
+            }, 50);
+        }
+        window.addEventListener('resize', () => { if (currentSelectedData.unicode) autoScalePreview(); });
+
+        function displayShapeAnalysis(glyphs) {
+            const container = document.getElementById('shapeAnalysisContainer');
+            if (!container) return; 
+            container.innerHTML = ''; 
+            glyphs.forEach(g => {
+                let cat = "方形", color = "bg-stone-500";
+                if(g.type === 'broad') { cat = "扁型"; color = "bg-blue-600"; }
+                if(g.type === 'tall') { cat = "長型"; color = "bg-emerald-600"; }
+                if(g.type === 'small') { cat = "小型"; color = "bg-amber-500"; }
+                container.innerHTML += `<div class="flex items-center gap-1.5 bg-white border border-stone-200 rounded px-2 py-1 shadow-sm"><span class="hieroglyph-text text-lg">${g.char}</span><span class="text-[10px] font-mono text-stone-500">R:${g.ratio.toFixed(2)}</span><span class="text-[10px] text-white px-1.5 rounded ${color}">${cat}</span></div>`;
+            });
+        }
+
+        function copyFinalUnicode() {
+            navigator.clipboard.writeText(currentSelectedData.unicode).then(() => showToast("已複製底層聖書體 Unicode！"));
+        }
+
+        async function downloadAsImage() {
+            showToast("正在渲染高畫質圖片...", "info");
+            const captureArea = document.getElementById('captureArea');
+            const currentTransform = captureArea.style.transform;
+            captureArea.style.transform = 'scale(1)'; 
+            
+            try {
+                await new Promise(r => setTimeout(r, 50));
+                const canvas = await html2canvas(captureArea, { backgroundColor: "#f5f5f4", scale: 2, logging: false });
+                const link = document.createElement('a');
+                link.download = `Hieroglyphs_Export_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast("圖片下載成功！");
+            } catch (e) { showToast("圖片生成失敗", "error"); } 
+            finally { captureArea.style.transform = currentTransform; }
+        }
+
+        function showToast(message, type = "success") {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgColor = type === 'error' ? 'bg-red-600' : (type === 'info' ? 'bg-blue-600' : 'bg-stone-800');
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-lg text-sm flex items-center gap-2 toast-animate transition-all duration-300`;
+            toast.innerHTML = `<i data-lucide="${type === 'error' ? 'alert-circle' : 'check-circle'}" class="w-4 h-4"></i><span>${message}</span>`;
+            container.appendChild(toast); lucide.createIcons();
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(100%)'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+    </script>
+</body>
+</html>
