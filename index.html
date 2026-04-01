@@ -237,6 +237,31 @@
         const apiKey = "AIzaSyDVb-5iJqo8nXEUBsq5JhV_udTgQzatsPA"; 
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
+        // 新增：帶有指數退避重試與錯誤處理的 API 呼叫包裝器
+        async function fetchWithBackoff(payload) {
+            for (let i = 0; i < 5; i++) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error?.message || "API request failed");
+                    }
+                    if (!data.candidates || data.candidates.length === 0) {
+                        throw new Error("No candidates in API response");
+                    }
+                    return data;
+                } catch (e) {
+                    if (i === 4) throw e;
+                    await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+                }
+            }
+        }
+
         // ==========================================
         // V5.0: 模擬外部資料庫 (僅提供基礎詞彙與轉寫)
         // ==========================================
@@ -365,8 +390,6 @@
             const aiSuggestArea = document.getElementById('aiSuggestArea');
             const cognitiveReviewArea = document.getElementById('cognitiveReviewArea');
             
-            // 移除：aiSuggestArea.classList.add('hidden'); // 保留建議清單，讓用戶可反覆點選
-            
             // 新增：如果已經解析過，直接從暫存讀取，瞬間渲染
             if (cognitiveCache[transliteration]) {
                 renderCognitiveData(cognitiveCache[transliteration], transliteration);
@@ -399,12 +422,8 @@
                     注意：所有的 unicode 欄位必須使用真實的古埃及聖書體字元 (U+13000區段)。若遇到固定綁定的祈使語或尊稱 (如國王 nesu-bity)，請在組合寫法中展現其特殊排列 (如樹枝與蜜蜂)。
                 `;
 
-                const response = await fetch(API_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
-                });
-                
-                const data = await response.json();
+                const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } };
+                const data = await fetchWithBackoff(payload);
                 const parseResult = JSON.parse(data.candidates[0].content.parts[0].text);
                 
                 // 新增：存入暫存並呼叫渲染
@@ -412,8 +431,8 @@
                 renderCognitiveData(parseResult, transliteration);
                 
             } catch (e) {
-                statusEl.innerHTML = `<span class="text-red-600">認知解析失敗，請稍後重試。</span>`;
-                console.error(e);
+                statusEl.innerHTML = `<span class="text-red-600">認知解析失敗，請稍後重試。(${e.message || '未知錯誤'})</span>`;
+                console.error("Cognitive Parsing Error:", e);
             }
         }
 
@@ -496,11 +515,9 @@
                         { "reason": "推薦理由", "transliteration": "羅馬轉寫(小寫)" }
                     ]
                 }`;
-            const response = await fetch(API_URL, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
-            });
-            const data = await response.json();
+            
+            const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } };
+            const data = await fetchWithBackoff(payload);
             return JSON.parse(data.candidates[0].content.parts[0].text);
         }
 
